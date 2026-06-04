@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Varo Stone Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f8f7f4;color:#1a1a1a;padding:20px;max-width:1100px;margin:0 auto}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:.5px solid rgba(0,0,0,.1)}
+.header h1{font-size:20px;font-weight:500}
+.header p{font-size:12px;color:#888;margin-top:3px}
+.badge{font-size:11px;background:#f0f0f0;padding:4px 10px;border-radius:20px;color:#666}
+.section-label{font-size:11px;font-weight:500;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:#fff;border-radius:10px;border:.5px solid rgba(0,0,0,.08);padding:14px 16px}
+.platform-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:8px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.big-num{font-size:26px;font-weight:500;line-height:1}
+.delta{font-size:11px;margin-top:5px}
+.delta.up{color:#1a7a4a}.delta.neutral{color:#999}
+.chart-card{background:#fff;border-radius:10px;border:.5px solid rgba(0,0,0,.08);padding:16px}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:14px}
+.chart-wrap{position:relative;width:100%}
+.posts-card{background:#fff;border-radius:10px;border:.5px solid rgba(0,0,0,.08);padding:16px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:11px;font-weight:500;color:#888;padding:6px 8px;border-bottom:.5px solid rgba(0,0,0,.08)}
+td{padding:8px;border-bottom:.5px solid rgba(0,0,0,.05);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.pill-ig{background:#fce4f0;color:#9c2060}
+.pill-yt{background:#ffe5e5;color:#b02020}
+.pill-fb{background:#e3eeff;color:#1a4fa0}
+.bar-bg{height:3px;border-radius:2px;background:#eee;margin-top:4px;width:80px}
+.bar-fill{height:3px;border-radius:2px}
+.thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;border:.5px solid rgba(0,0,0,.1)}
+.thumb-placeholder{width:44px;height:44px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.notice{background:#f0f4ff;border:.5px solid #c0d0f0;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#3050a0}
+.caption-preview{color:#888;font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a{color:#3060c0;text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Varo Stone social media analytics dashboard</h2>
+
+<div class="header">
+  <div>
+    <h1>Varo Stone</h1>
+    <p id="updated-label">Last 14 days · Updated Jun 4, 2026</p>
+  </div>
+  <span class="badge" id="day-badge">Day 1</span>
+</div>
+
+<div class="notice">
+  🔄 Auto-updates every day at 8 AM. To refresh now, say <strong>"update my dashboard"</strong>.
+</div>
+
+<p class="section-label">Followers by platform</p>
+<div class="grid4" id="followers-grid"></div>
+
+<p class="section-label">Performance overview</p>
+<div class="grid4" id="totals-grid"></div>
+
+<div class="grid2">
+  <div class="chart-card">
+    <div class="chart-title">Views per day</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="viewsChart" role="img" aria-label="Daily views by platform">Views</canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Follower growth</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="growthChart" role="img" aria-label="Follower growth over time">Growth</canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Engagements by platform</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="engChart" role="img" aria-label="Engagements per platform">Engagement</canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Likes · Comments · Shares</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="breakChart" role="img" aria-label="Likes, comments and shares breakdown">Breakdown</canvas></div>
+  </div>
+</div>
+
+<div class="posts-card">
+  <div class="chart-title">Top posts by views</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:52px"></th>
+        <th>Caption</th>
+        <th>Platform</th>
+        <th>Views</th>
+        <th>Likes</th>
+        <th>Shares</th>
+        <th>Saves</th>
+        <th>Eng %</th>
+      </tr>
+    </thead>
+    <tbody id="posts-tbody"></tbody>
+  </table>
+</div>
+
+<script>
+// ── BAKED DATA ── Updated: Jun 4, 2026 ──────────────────────
+const UPDATED = "Jun 4, 2026";
+
+const DATA = {
+  instagram: [
+    {date:"2026-05-22",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-23",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-24",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-25",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-26",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-27",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-28",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-29",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-30",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-05-31",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-06-01",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-06-02",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-06-03",followers:null,views:0,likes:0,comments:0,shares:0,saves:0,reach:0},
+    {date:"2026-06-04",followers:1,views:21,likes:2,comments:0,shares:1,saves:0,reach:17}
+  ],
+  tiktok: [
+    {date:"2026-05-22",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-23",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-24",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-25",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-26",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-27",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-28",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-29",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-30",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-05-31",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-06-01",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-06-02",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-06-03",followers:0,views:0,likes:0,comments:0,shares:0},
+    {date:"2026-06-04",followers:0,views:0,likes:0,comments:0,shares:0}
+  ],
+  youtube: [
+    {date:"2026-05-22",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-23",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-24",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-25",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-26",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-27",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-28",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-29",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-30",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-05-31",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-06-01",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0},
+    {date:"2026-06-02",followers:1,views:0,likes:0,comments:0,shares:0,minutes:0}
+  ],
+  facebook: [
+    {date:"2026-05-22",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-23",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-24",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-25",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-26",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-27",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-28",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-29",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-30",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-05-31",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-06-01",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-06-02",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-06-03",followers:0,impressions:0,engagements:0,video_views:0},
+    {date:"2026-06-04",followers:0,impressions:34,engagements:0,video_views:14}
+  ]
+};
+
+const POSTS = [
+  {
+    date: "2026-06-04",
+    platform: "Instagram",
+    pill: "pill-ig",
+    color: "#C13584",
+    thumbnail: "https://scontent-fra3-2.cdninstagram.com/v/t51.82787-15/714738507_18102565057863719_8436183938179082679_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=111&ccb=7-5&_nc_sid=18de74&efg=eyJlZmdfdGFnIjoiQ0xJUFMuYmVzdF9pbWFnZV91cmxnZW4uQzMifQ%3D%3D&_nc_ohc=VyCJac7tMkUQ7kNvwH1XelB&_nc_oc=AdrnAhO9fyI-Xaj0SPHu1lS2BMrZJS0-ik6KmHN_tTbpOXm_Y7TZ5buD0vjKDd_uMao&_nc_zt=23&_nc_ht=scontent-fra3-2.cdninstagram.com&edm=AM6HXa8EAAAA&oh=00_Af_Ehd9X9_WjSaJkvDIxAYwoklTaui28OQY3fcOsQB4Wgg&oe=6A27BAFD",
+    permalink: "https://www.instagram.com/reel/DZLGR55gDKD/",
+    caption: "You're tired because you're fighting battles that aren't yours. The Stoics show you which ones matter.",
+    views: 47,
+    likes: 2,
+    comments: 0,
+    shares: 1,
+    saves: 0
+  }
+];
+
+// ── HELPERS ──────────────────────────────────────────────
+function fmt(n){
+  if(n===null||n===undefined||isNaN(n))return'—';
+  if(n>=1000000)return(n/1000000).toFixed(1)+'M';
+  if(n>=1000)return(n/1000).toFixed(1)+'K';
+  return Math.round(n).toLocaleString();
+}
+function lastVal(arr,key){
+  for(let i=arr.length-1;i>=0;i--){
+    const v=arr[i][key];
+    if(v!==null&&v!==undefined&&!isNaN(Number(v)))return Number(v);
+  }
+  return null;
+}
+function sumField(arr,key){return arr.reduce((s,r)=>s+(parseFloat(r[key])||0),0)}
+
+// ── DATES ────────────────────────────────────────────────
+const DATES = DATA.instagram.map(r=>r.date);
+const LABELS = DATES.map(d=>{const p=d.split('-');return p[1]+'/'+p[2]});
+document.getElementById('updated-label').textContent = `Last 14 days · Updated ${UPDATED}`;
+
+// ── FOLLOWER CARDS ───────────────────────────────────────
+const platforms = [
+  {name:'Instagram',color:'#C13584',followers:lastVal(DATA.instagram,'followers'),views:sumField(DATA.instagram,'views'),likes:sumField(DATA.instagram,'likes'),comments:sumField(DATA.instagram,'comments'),shares:sumField(DATA.instagram,'shares')},
+  {name:'TikTok',color:'#222',followers:lastVal(DATA.tiktok,'followers'),views:sumField(DATA.tiktok,'views'),likes:sumField(DATA.tiktok,'likes'),comments:sumField(DATA.tiktok,'comments'),shares:sumField(DATA.tiktok,'shares')},
+  {name:'YouTube',color:'#FF0000',followers:lastVal(DATA.youtube,'followers'),views:sumField(DATA.youtube,'views'),likes:sumField(DATA.youtube,'likes'),comments:sumField(DATA.youtube,'comments'),shares:sumField(DATA.youtube,'shares')},
+  {name:'Facebook',color:'#1877F2',followers:lastVal(DATA.facebook,'followers'),views:sumField(DATA.facebook,'impressions'),likes:sumField(DATA.facebook,'engagements'),comments:0,shares:0}
+];
+
+document.getElementById('followers-grid').innerHTML = platforms.map(p=>{
+  const f = p.followers;
+  const delta = (f===null||f===0) ? '<span class="delta neutral">no followers yet</span>' : `<span class="delta up">${fmt(f)} total ↑</span>`;
+  return `<div class="card">
+    <div class="platform-row"><span class="dot" style="background:${p.color}"></span>${p.name}</div>
+    <div class="big-num">${f!==null?fmt(f):'—'}</div>
+    ${delta}
+  </div>`;
+}).join('');
+
+// ── TOTALS ───────────────────────────────────────────────
+const totalViews = platforms.reduce((s,p)=>s+p.views,0);
+const totalLikes = platforms.reduce((s,p)=>s+p.likes,0);
+const totalComments = platforms.reduce((s,p)=>s+p.comments,0);
+const totalShares = platforms.reduce((s,p)=>s+p.shares,0);
+const totalEng = totalLikes+totalComments+totalShares;
+const totalReach = sumField(DATA.instagram,'reach')+sumField(DATA.facebook,'impressions');
+const engRate = totalViews>0?(totalEng/totalViews*100):0;
+
+document.getElementById('totals-grid').innerHTML = [
+  {label:'Total reach',val:fmt(totalReach)},
+  {label:'Total views',val:fmt(totalViews)},
+  {label:'Total engagements',val:fmt(totalEng)},
+  {label:'Avg engagement rate',val:engRate.toFixed(2)+'%'}
+].map(t=>`<div class="card"><div style="font-size:11px;color:#888;margin-bottom:6px">${t.label}</div><div class="big-num" style="font-size:22px">${t.val}</div></div>`).join('');
+
+// ── CHARTS ───────────────────────────────────────────────
+const igViews = DATES.map(d=>{const r=DATA.instagram.find(x=>x.date===d);return r?r.views:0});
+const ttViews = DATES.map(d=>{const r=DATA.tiktok.find(x=>x.date===d);return r?r.views:0});
+const ytViews = DATES.map(d=>{const r=DATA.youtube.find(x=>x.date===d);return r?r.views:0});
+const fbViews = DATES.map(d=>{const r=DATA.facebook.find(x=>x.date===d);return r?r.video_views:0});
+
+new Chart(document.getElementById('viewsChart'),{
+  type:'bar',
+  data:{labels:LABELS,datasets:[
+    {label:'Instagram',data:igViews,backgroundColor:'#C13584',borderRadius:3},
+    {label:'TikTok',data:ttViews,backgroundColor:'#444',borderRadius:3},
+    {label:'YouTube',data:ytViews,backgroundColor:'#FF0000',borderRadius:3},
+    {label:'Facebook',data:fbViews,backgroundColor:'#1877F2',borderRadius:3}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false},ticks:{maxTicksLimit:7,font:{size:10}}},y:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:v=>fmt(v)}}}}
+});
+
+const igFoll = DATES.map(d=>{const r=DATA.instagram.find(x=>x.date===d);return r&&r.followers!==null?r.followers:null});
+const ytFoll = DATES.map(d=>{const r=DATA.youtube.find(x=>x.date===d);return r&&r.followers!==null?r.followers:null});
+new Chart(document.getElementById('growthChart'),{
+  type:'line',
+  data:{labels:LABELS,datasets:[
+    {label:'Instagram',data:igFoll,borderColor:'#C13584',backgroundColor:'#C1358415',borderWidth:2,fill:false,tension:.3,pointRadius:4,spanGaps:true},
+    {label:'YouTube',data:ytFoll,borderColor:'#FF0000',backgroundColor:'#FF000015',borderWidth:2,fill:false,tension:.3,pointRadius:4,spanGaps:true}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:7,font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:v=>fmt(v)}}}}
+});
+
+new Chart(document.getElementById('engChart'),{
+  type:'bar',
+  data:{labels:platforms.map(p=>p.name),datasets:[{label:'Engagements',data:platforms.map(p=>p.likes+p.comments+p.shares),backgroundColor:platforms.map(p=>p.color),borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:v=>fmt(v)}}}}
+});
+
+new Chart(document.getElementById('breakChart'),{
+  type:'bar',
+  data:{
+    labels:platforms.map(p=>p.name),
+    datasets:[
+      {label:'Likes',data:platforms.map(p=>p.likes),backgroundColor:'#E8A0C0',borderRadius:3},
+      {label:'Comments',data:platforms.map(p=>p.comments),backgroundColor:'#A0C8E8',borderRadius:3},
+      {label:'Shares',data:platforms.map(p=>p.shares),backgroundColor:'#A0E8B8',borderRadius:3}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},y:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:v=>fmt(v)}}}}
+});
+
+// ── POSTS TABLE ──────────────────────────────────────────
+const maxV = POSTS.length ? Math.max(...POSTS.map(p=>p.views)) : 1;
+document.getElementById('posts-tbody').innerHTML = POSTS.length
+  ? POSTS.map(p=>{
+      const eng = p.views>0?((p.likes+p.comments+p.shares)/p.views*100):0;
+      const thumb = p.thumbnail
+        ? `<a href="${p.permalink}" target="_blank"><img class="thumb" src="${p.thumbnail}" alt="Post thumbnail" onerror="this.parentNode.innerHTML='<span class=thumb-placeholder>▶</span>'"></a>`
+        : `<span class="thumb-placeholder">▶</span>`;
+      return `<tr>
+        <td>${thumb}</td>
+        <td>
+          <div class="caption-preview" title="${p.caption}">${p.caption}</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">${p.date}</div>
+        </td>
+        <td><span class="pill ${p.pill}">${p.platform}</span></td>
+        <td>
+          <div style="font-weight:500">${fmt(p.views)}</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(p.views/maxV*100)}%;background:${p.color}"></div></div>
+        </td>
+        <td>${fmt(p.likes)}</td>
+        <td>${fmt(p.shares)}</td>
+        <td>${fmt(p.saves)}</td>
+        <td>${eng.toFixed(1)}%</td>
+      </tr>`;
+    }).join('')
+  : '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px">No posts yet — start publishing to see performance here</td></tr>';
+</script>
+</body>
+</html>
